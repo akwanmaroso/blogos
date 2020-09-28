@@ -1,8 +1,9 @@
 package routes
 
 import (
-	"github.com/akwanmaroso/blogos/api/middlewares"
 	"net/http"
+
+	"github.com/akwanmaroso/blogos/api/middlewares"
 
 	"github.com/gorilla/mux"
 )
@@ -34,12 +35,14 @@ func SetupRoutesWithMiddlewares(r *mux.Router) *mux.Router {
 			r.HandleFunc(route.Uri,
 				middlewares.SetMiddlewareLogger(
 					middlewares.SetMiddlewareJSON(
-						middlewares.SetMiddlewareAuthentication(route.Handler))),
+						middlewares.SetMiddlewareCORS(
+							middlewares.SetMiddlewareAuthentication(route.Handler)))),
 			).Methods(route.Method)
 		} else {
 			r.HandleFunc(route.Uri,
 				middlewares.SetMiddlewareLogger(
-					middlewares.SetMiddlewareJSON(route.Handler)),
+					middlewares.SetMiddlewareCORS(
+						middlewares.SetMiddlewareJSON(route.Handler))),
 			).Methods(route.Method)
 		}
 	}
