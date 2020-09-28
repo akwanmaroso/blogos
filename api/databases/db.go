@@ -7,7 +7,7 @@ import (
 )
 
 func Connect() (*gorm.DB, error) {
-	db, err := gorm.Open(config.DB_DRIVER, config.DB_URL)
+	db, err := gorm.Open(config.DbDriver, config.DbUrl)
 	if err != nil {
 		return nil, err
 	}

@@ -1,21 +1,23 @@
 package routes
 
 import (
+	"github.com/akwanmaroso/blogos/api/middlewares"
 	"net/http"
 
-	"github.com/akwanmaroso/blogos/api/middlewares"
 	"github.com/gorilla/mux"
 )
 
 type Route struct {
-	Uri     string
-	Method  string
-	Handler func(http.ResponseWriter, *http.Request)
+	Uri          string
+	Method       string
+	Handler      func(http.ResponseWriter, *http.Request)
+	AuthRequired bool
 }
 
 func Load() []Route {
 	routes := usersRoutes
 	routes = append(routes, postsRoutes...)
+	routes = append(routes, loginRoutes...)
 	return routes
 }
 
@@ -28,9 +30,18 @@ func SetupRoutes(r *mux.Router) *mux.Router {
 
 func SetupRoutesWithMiddlewares(r *mux.Router) *mux.Router {
 	for _, route := range Load() {
-		r.HandleFunc(route.Uri,
-			middlewares.SetMiddlewareLogger(middlewares.SetMiddlewareJSON(route.Handler)),
-		).Methods(route.Method)
+		if route.AuthRequired {
+			r.HandleFunc(route.Uri,
+				middlewares.SetMiddlewareLogger(
+					middlewares.SetMiddlewareJSON(
+						middlewares.SetMiddlewareAuthentication(route.Handler))),
+			).Methods(route.Method)
+		} else {
+			r.HandleFunc(route.Uri,
+				middlewares.SetMiddlewareLogger(
+					middlewares.SetMiddlewareJSON(route.Handler)),
+			).Methods(route.Method)
+		}
 	}
 	return r
 }

@@ -38,7 +38,7 @@ func (u *User) Prepare() {
 }
 
 func (u *User) Validate(action string) error {
-	switch strings.ToLower(action) {
+	switch action {
 	case "update":
 		if u.Nickname == "" {
 			return errors.New("Required nickname")
@@ -48,6 +48,17 @@ func (u *User) Validate(action string) error {
 		}
 		if err := checkmail.ValidateFormat(u.Email); err != nil {
 			return errors.New("Invalid format email")
+		}
+		return nil
+	case "login":
+		if u.Email == "" {
+			return errors.New("Required email")
+		}
+		if err := checkmail.ValidateFormat(u.Email); err != nil {
+			return errors.New("Invalid format email")
+		}
+		if u.Password == "" {
+			return errors.New("Required password")
 		}
 		return nil
 	default:

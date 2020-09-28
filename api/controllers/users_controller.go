@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/akwanmaroso/blogos/api/auth"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -21,6 +23,8 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	defer db.Close()
 
 	repo := crud.NewRepositoryUsersCRUD(db)
 	func(userRepository repository.UserRepository) {
@@ -59,6 +63,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer db.Close()
+
 	repo := crud.NewRepositoryUsersCRUD(db)
 	func(userRepository repository.UserRepository) {
 		user, err := userRepository.Save(user)
@@ -85,6 +91,8 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	defer db.Close()
 
 	repo := crud.NewRepositoryUsersCRUD(db)
 	func(userRepository repository.UserRepository) {
@@ -118,11 +126,24 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tokenID, err := auth.ExtractTokenID(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if tokenID != user.ID {
+		responses.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
+
 	db, err := databases.Connect()
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	defer db.Close()
 
 	repo := crud.NewRepositoryUsersCRUD(db)
 	func(userRepository repository.UserRepository) {
@@ -145,11 +166,24 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tokenID, err := auth.ExtractTokenID(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if tokenID != uint32(uid) {
+		responses.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
+
 	db, err := databases.Connect()
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	defer db.Close()
 
 	repo := crud.NewRepositoryUsersCRUD(db)
 	func(userRepository repository.UserRepository) {

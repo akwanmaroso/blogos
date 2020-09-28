@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/akwanmaroso/blogos/api/auth"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -22,6 +24,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer db.Close()
 	repo := crud.NewRepositoryPostCRUD(db)
 	func(postsRepository repository.PostsRepository) {
 		posts, err := postsRepository.FindAll()
@@ -60,6 +63,8 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer db.Close()
+
 	repo := crud.NewRepositoryPostCRUD(db)
 	func(postsRepository repository.PostsRepository) {
 		post, err := postsRepository.Save(post)
@@ -67,7 +72,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 			responses.ERROR(w, http.StatusUnprocessableEntity, err)
 			return
 		}
-		w.Header().Set("Location", fmt.Sprintf("%s%s%d", r.Host, r.RequestURI, post.ID))
+		w.Header().Set("Location", fmt.Sprintf("%s%s%d", r.Host, r.URL.Path, post.ID))
 		responses.JSON(w, http.StatusCreated, post)
 	}(repo)
 
@@ -86,6 +91,7 @@ func GetPost(w http.ResponseWriter, r *http.Request) {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
+
 	defer db.Close()
 
 	repo := crud.NewRepositoryPostCRUD(db)
@@ -122,6 +128,17 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	uid, err := auth.ExtractTokenID(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if uid != post.AuthorID {
+		responses.ERROR(w, http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
+		return
+	}
+
 	post.Prepare()
 	err = post.Validate()
 	if err != nil {
@@ -135,9 +152,11 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer db.Close()
+
 	repo := crud.NewRepositoryPostCRUD(db)
 
-	func(postsRepository repository.PostsRepository){
+	func(postsRepository repository.PostsRepository) {
 		rows, err := postsRepository.Update(uint64(pid), post)
 		if err != nil {
 			responses.ERROR(w, http.StatusBadRequest, err)
@@ -155,16 +174,24 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	uid, err := auth.ExtractTokenID(r)
+	if err != nil {
+		responses.ERROR(w, http.StatusBadRequest, err)
+		return
+	}
+
 	db, err := databases.Connect()
 	if err != nil {
 		responses.ERROR(w, http.StatusInternalServerError, err)
 		return
 	}
 
+	defer db.Close()
+
 	repo := crud.NewRepositoryPostCRUD(db)
 
 	func(postsRepository repository.PostsRepository) {
-		_, err := postsRepository.Delete(pid)
+		_, err := postsRepository.Delete(pid, uid)
 		if err != nil {
 			responses.ERROR(w, http.StatusBadRequest, err)
 			return

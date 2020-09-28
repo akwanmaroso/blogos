@@ -7,5 +7,5 @@ type PostsRepository interface {
 	FindAll() ([]models.Post, error)
 	FindById(uint64) (models.Post, error)
 	Update(uint64, models.Post) (int64, error)
-	Delete(uint64) (int64, error)
+	Delete(postId uint64, userId uint32) (int64, error)
 }
