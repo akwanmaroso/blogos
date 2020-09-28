@@ -1,1 +1,2 @@
-## Go Mysql JWT
+## Blogos
+Go-React-Mysql
