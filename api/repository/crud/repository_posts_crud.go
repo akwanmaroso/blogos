@@ -2,10 +2,11 @@ package crud
 
 import (
 	"errors"
+	"time"
+
 	"github.com/akwanmaroso/blogos/api/models"
 	"github.com/akwanmaroso/blogos/utils/channels"
 	"github.com/jinzhu/gorm"
-	"time"
 )
 
 type repositoryPostsCRUD struct {
